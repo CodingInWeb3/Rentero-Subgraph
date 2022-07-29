@@ -1,4 +1,4 @@
-import { BigInt } from "@graphprotocol/graph-ts"
+import { BigInt, store, Address } from "@graphprotocol/graph-ts"
 import {
   NftRentProtocolWrap,
   Approval,
@@ -8,7 +8,7 @@ import {
   Transfer,
   UpdateBorrow
 } from "../generated/NftRentProtocolWrap/NftRentProtocolWrap"
-import { ExampleEntity } from "../generated/schema"
+import { ExampleEntity, BorrowerRecord } from "../generated/schema"
 
 export function handleApproval(event: Approval): void {
   // Entities can be loaded from the store using a string ID; this ID
@@ -65,12 +65,27 @@ export function handleApproval(event: Approval): void {
   // - contract.tokenURI(...)
 }
 
-export function handleApprovalForAll(event: ApprovalForAll): void {}
+export function handleApprovalForAll(event: ApprovalForAll): void { }
 
-export function handleRedeem(event: Redeem): void {}
+export function handleRedeem(event: Redeem): void { }
 
-export function handleStake(event: Stake): void {}
+export function handleStake(event: Stake): void { }
 
-export function handleTransfer(event: Transfer): void {}
+export function handleTransfer(event: Transfer): void { }
 
-export function handleUpdateBorrow(event: UpdateBorrow): void {}
+export function handleUpdateBorrow(event: UpdateBorrow): void {
+
+  const recordId = event.address.toHexString() + event.params.tokenId.toString()
+
+  const entity = new BorrowerRecord(recordId)
+
+  const contract = NftRentProtocolWrap.bind(event.address)
+  const lender = contract.originalOwnerOf(event.params.tokenId)
+
+  entity.contract = event.address
+  entity.nftId = event.params.tokenId
+  entity.lender = lender
+  entity.renter = event.params.borrower
+
+  entity.save()
+}
